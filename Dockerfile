@@ -6,12 +6,12 @@ COPY go.mod .
 RUN go mod download
 
 COPY . .
-RUN go build -o mc-player-service ./cmd
+RUN go build -o player-tracker ./cmd
 
 FROM alpine
 
 WORKDIR /app
 
-COPY --from=go /app/mc-player-service ./mc-player-service
+COPY --from=go /app/player-tracker ./player-tracker
 COPY run/config.yaml ./config.yaml
-CMD ["./mc-player-service"]
+CMD ["./player-tracker"]

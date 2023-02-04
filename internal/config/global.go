@@ -6,9 +6,9 @@ import (
 )
 
 type Config struct {
-	RabbitMQ    RabbitMQConfig `yaml:"rabbitmq"`
-	MongoDB     MongoDBConfig  `yaml:"mongodb"`
-	Development bool           `yaml:"debug"`
+	RabbitMQ    *RabbitMQConfig `yaml:"rabbitmq"`
+	MongoDB     *MongoDBConfig  `yaml:"mongodb"`
+	Development bool            `yaml:"debug"`
 
 	Port uint16 `yaml:"port"`
 }

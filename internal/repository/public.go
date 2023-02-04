@@ -1,21 +1,27 @@
-package statestore
+package repository
 
 import (
 	"context"
 	"github.com/google/uuid"
+	"player-tracker/internal/repository/model"
 )
 
-type StateStore interface {
-	HealthPing(ctx context.Context) error
-
+// Repository contains methods for all repository implementations.
+// All Set methods should insert if the Player is not already present
+type Repository interface {
 	SetPlayerGameServer(ctx context.Context, playerId uuid.UUID, serverId string) error
-	GetPlayerGameServer(ctx context.Context, playerId uuid.UUID) (string, error)
 
 	SetPlayerProxy(ctx context.Context, playerId uuid.UUID, proxyId string) error
-	GetPlayerProxy(ctx context.Context, playerId uuid.UUID) (string, error)
 
-	GetServerPlayerIds(ctx context.Context, serverId string) ([]string, error)
-	GetServerPlayerCount(ctx context.Context, serverId string) (int64, error)
+	GetPlayer(ctx context.Context, playerId uuid.UUID) (*model.Player, error)
+	GetPlayers(ctx context.Context, playerIds []uuid.UUID) ([]*model.Player, error)
+	DeletePlayer(ctx context.Context, playerId uuid.UUID) error
 
-	GetServerTypePlayerCount(ctx context.Context, serverId string) (int64, error)
+	GetServerPlayers(ctx context.Context, serverId string) ([]*model.Player, error)
+	GetServerPlayerCount(ctx context.Context, serverId string, proxy bool) (int64, error)
+
+	// GetServerTypePlayerCount returns the number of players on a server type
+	// where fleetName is the prefix of the server type (e.g. {fleetName}-3xja3t-qlx35)
+	GetServerTypePlayerCount(ctx context.Context, fleetName string) (int64, error)
+	PlayerCount(ctx context.Context) (int64, error)
 }

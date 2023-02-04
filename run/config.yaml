@@ -8,4 +8,4 @@ rabbitmq:
 mongodb:
   uri: mongodb://localhost:27017
 
-port: 10004
+port: 10005
