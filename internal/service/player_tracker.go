@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"log"
 	"player-tracker/internal/repository"
 	"strings"
 )
@@ -76,7 +77,7 @@ func (s *playerTrackerService) GetPlayerServers(ctx context.Context, req *pb.Get
 
 	locations := make(map[string]*pbmodel.PlayerLocation, len(players))
 	for _, p := range players {
-		locations[p.GameServerId] = &pbmodel.PlayerLocation{
+		locations[p.Id.String()] = &pbmodel.PlayerLocation{
 			ServerId: p.GameServerId,
 			ProxyId:  p.ProxyId,
 		}
@@ -114,6 +115,14 @@ func (s *playerTrackerService) GetServerPlayerCount(ctx context.Context, req *pb
 }
 
 func (s *playerTrackerService) GetServerTypePlayerCount(ctx context.Context, req *pb.GetServerTypePlayerCountRequest) (*pb.ServerTypePlayerCountResponse, error) {
+	if req.ServerType == common.ServerType_PROXY {
+		count, err := s.repo.PlayerCount(ctx)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to get player count from repository: %v", err)
+		}
+		return &pb.ServerTypePlayerCountResponse{PlayerCount: uint32(count)}, nil
+	}
+
 	fleet, ok := serverTypeToFleet[req.ServerType]
 	if !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "unknown server type %v", req.ServerType)
@@ -129,6 +138,14 @@ func (s *playerTrackerService) GetServerTypePlayerCount(ctx context.Context, req
 func (s *playerTrackerService) GetServerTypesPlayerCount(ctx context.Context, req *pb.GetServerTypesPlayerCountRequest) (*pb.ServerTypesPlayerCountResponse, error) {
 	counts := make(map[int32]uint32, len(req.ServerTypes))
 	for _, t := range req.ServerTypes {
+		if t == common.ServerType_PROXY {
+			count, err := s.repo.PlayerCount(ctx)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to get player count from repository: %v", err)
+			}
+			counts[int32(common.ServerType_PROXY.Number())] = uint32(count)
+			continue
+		}
 		fleet, ok := serverTypeToFleet[t]
 		if !ok {
 			return nil, status.Errorf(codes.InvalidArgument, "unknown server type %v", t)
@@ -139,10 +156,8 @@ func (s *playerTrackerService) GetServerTypesPlayerCount(ctx context.Context, re
 			return nil, status.Errorf(codes.Internal, "failed to get server type player count from repository: %v", err)
 		}
 
-		cardinal, ok := common.ServerType_value[string(t)]
-		if !ok {
-			return nil, status.Errorf(codes.Internal, "failed to get cardinal value for server type %v", t)
-		}
+		cardinal := int32(t.Number())
+		log.Printf("cardinal: %v for %v", cardinal, t)
 
 		counts[cardinal] = uint32(count)
 	}

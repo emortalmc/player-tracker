@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/emortalmc/proto-specs/gen/go/grpc/playertracker"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -43,13 +43,14 @@ func Run(ctx context.Context, cfg *config.Config, logger *zap.SugaredLogger) {
 
 	s := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			grpc_zap.UnaryServerInterceptor(logger.Desugar(), grpc_zap.WithLevels(func(code codes.Code) zapcore.Level {
-				if code == codes.OK {
+			grpczap.UnaryServerInterceptor(logger.Desugar(), grpczap.WithLevels(func(code codes.Code) zapcore.Level {
+				if code != codes.Internal && code != codes.Unavailable && code != codes.Unknown {
 					return zapcore.DebugLevel
+				} else {
+					return zapcore.ErrorLevel
 				}
-				return zapcore.InfoLevel
 			})),
-			grpc_prometheus.UnaryServerInterceptor,
+			grpcprometheus.UnaryServerInterceptor,
 		),
 	)
 	playertracker.RegisterPlayerTrackerServer(s, service.NewPlayerTrackerService(repo))
