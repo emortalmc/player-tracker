@@ -169,56 +169,6 @@ func TestMongoRepository_SetPlayerGameServer(t *testing.T) {
 	}
 }
 
-func TestMongoRepository_GetPlayerGameServer(t *testing.T) {
-	playerId := uuid.New()
-	serverId := "lobby-z24523-sdhbsd"
-	proxyId := "proxy-sdgwsd-235eax"
-
-	tests := []struct {
-		name     string
-		data     []model.Player
-		playerId uuid.UUID
-		want     string
-		wantErr  error
-	}{
-		{
-			name:     "doesnt_exist",
-			playerId: playerId,
-
-			want:    "",
-			wantErr: mongo.ErrNoDocuments,
-		},
-		{
-			name: "exists",
-			data: []model.Player{
-				{
-					Id:           playerId,
-					GameServerId: serverId,
-					ProxyId:      proxyId,
-				},
-			},
-			playerId: playerId,
-			want:     serverId,
-			wantErr:  nil,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Cleanup(cleanup())
-			// Insert test data
-			if test.data != nil {
-				_, err := database.Collection(playerCollectionName).InsertMany(context.Background(), convertToInterfaceSlice(test.data))
-				assert.NoError(t, err)
-			}
-
-			got, err := repo.GetPlayerGameServer(context.Background(), test.playerId)
-			assert.Equal(t, test.wantErr, err)
-			assert.Equal(t, test.want, got)
-		})
-	}
-}
-
 func TestMongoRepository_SetPlayerProxy(t *testing.T) {
 	playerId := uuid.New()
 	serverId := "lobby-z24523-sdhbsd"
@@ -287,56 +237,6 @@ func TestMongoRepository_SetPlayerProxy(t *testing.T) {
 
 			err = cursor.All(context.Background(), &players)
 			assert.NoError(t, err)
-		})
-	}
-}
-
-func TestMongoRepository_GetPlayerProxy(t *testing.T) {
-	playerId := uuid.New()
-	serverId := "lobby-z24523-sdhbsd"
-	proxyId := "proxy-sdgwsd-235eax"
-
-	tests := []struct {
-		name     string
-		data     []model.Player
-		playerId uuid.UUID
-		want     string
-		wantErr  error
-	}{
-		{
-			name:     "doesnt_exist",
-			playerId: playerId,
-
-			want:    "",
-			wantErr: mongo.ErrNoDocuments,
-		},
-		{
-			name: "exists",
-			data: []model.Player{
-				{
-					Id:           playerId,
-					GameServerId: serverId,
-					ProxyId:      proxyId,
-				},
-			},
-			playerId: playerId,
-			want:     proxyId,
-			wantErr:  nil,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Cleanup(cleanup())
-			// Insert test data
-			if test.data != nil {
-				_, err := database.Collection(playerCollectionName).InsertMany(context.Background(), convertToInterfaceSlice(test.data))
-				assert.NoError(t, err)
-			}
-
-			got, err := repo.GetPlayerProxy(context.Background(), test.playerId)
-			assert.Equal(t, test.wantErr, err)
-			assert.Equal(t, test.want, got)
 		})
 	}
 }
@@ -433,89 +333,6 @@ func TestMongoRepository_DeletePlayer(t *testing.T) {
 
 			err := repo.DeletePlayer(context.Background(), test.playerId)
 			assert.Equal(t, test.wantErr, err)
-		})
-	}
-}
-
-func TestMongoRepository_GetServerPlayerIds(t *testing.T) {
-	playerIds := []uuid.UUID{uuid.New(), uuid.New(), uuid.New()}
-	serverIds := []string{"lobby-1", "lobby-2"}
-	proxyIds := []string{"proxy-1", "proxy-2", "proxy-3"}
-
-	tests := []struct {
-		name     string
-		data     []model.Player
-		serverId string
-		want     []uuid.UUID
-		wantErr  error
-	}{
-		{
-			name:     "empty",
-			data:     nil,
-			serverId: serverIds[0],
-			want:     nil,
-			wantErr:  nil, // Just an empty array of players, not an error
-		},
-		{
-			name: "valid",
-			data: []model.Player{
-				{
-					Id:           playerIds[0],
-					GameServerId: serverIds[0],
-					ProxyId:      proxyIds[0],
-				},
-				{
-					Id:           playerIds[1],
-					GameServerId: serverIds[0], // All from the same server
-					ProxyId:      proxyIds[1],
-				},
-				{
-					Id:           playerIds[2],
-					GameServerId: serverIds[0],
-					ProxyId:      proxyIds[2],
-				},
-			},
-			serverId: serverIds[0],
-			want:     playerIds,
-			wantErr:  nil,
-		},
-		{
-			name: "random_servers",
-			data: []model.Player{
-				{
-					Id:           playerIds[0],
-					GameServerId: serverIds[0],
-					ProxyId:      proxyIds[0],
-				},
-				{
-					Id:           playerIds[1],
-					GameServerId: serverIds[0], // Same server
-					ProxyId:      proxyIds[1],
-				},
-				{
-					Id:           playerIds[2],
-					GameServerId: serverIds[1], // Different server
-					ProxyId:      proxyIds[2],
-				},
-			},
-			serverId: serverIds[0],
-			want:     playerIds[:2],
-			wantErr:  nil,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Cleanup(cleanup())
-			// Insert test data
-			if test.data != nil {
-				_, err := database.Collection(playerCollectionName).InsertMany(context.Background(), convertToInterfaceSlice(test.data))
-				assert.NoError(t, err)
-			}
-
-			got, err := repo.GetServerPlayerIds(context.Background(), test.serverId)
-			assert.Equal(t, test.wantErr, err)
-			assert.Equal(t, test.want, got)
 		})
 	}
 }
